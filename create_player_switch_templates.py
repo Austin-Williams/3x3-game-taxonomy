@@ -2,7 +2,7 @@
 # correspondence between all permutations of range(1,10) and the templates to which the
 # correspond. Given a permutation of range(1,10), we find the corresponding template as follows:
 
-# Enter the values of the permutation into a matrix (think of this as entering in payer 2's
+# Enter the values of the permutation into a matrix (think of this as entering in player 2's
 # utilities into a matrix and leaving player 1's blank). Then take the transposition of the
 # matrix (you now have something that looks like a template but likely isn't in 'standard form').
 
@@ -15,7 +15,7 @@
 # about 140mb.
 
 from itertools import combinations, permutations
-from numpy import *
+import numpy as np
 import pickle
 
 
@@ -26,8 +26,8 @@ def standard_form(mat):
     # The function returns the matrix in this standard form.
 
     # we find the index of the highest valued entry in the matrix (9 in our case).
-    index_of_max = argmax(mat)
-    indices = unravel_index(index_of_max, [3, 3], order='C')
+    index_of_max = np.argmax(mat)
+    indices = np.unravel_index(index_of_max, [3, 3], order='C')
 
     # Then we swap rows/cols to put that highest valued entry in the upper left hand corner of the
     # matrix.
@@ -36,8 +36,8 @@ def standard_form(mat):
 
     # Next we look at the lower right 2x2 submatrix and do the same thing.
     submatrix = mat[1:, 1:]
-    index_of_submax = argmax(submatrix)
-    subindices = unravel_index(index_of_submax, [2, 2], order='C')
+    index_of_submax = np.argmax(submatrix)
+    subindices = np.unravel_index(index_of_submax, [2, 2], order='C')
 
     # we swap rows/cols as needed.
     mat[[1, subindices[0] + 1], :] = mat[[subindices[0] + 1, 1], :]
@@ -52,7 +52,7 @@ def perm_template(perm):
     # This function takes in a permutation of range(1,10) (as a list). It converts the
     # permutation to a matrix, takes the transposition of the matrix, puts the matrix into
     # standard form, and then outputs the standard form matrix.
-    mat = matrix(
+    mat = np.matrix(
         [[perm[0], perm[1], perm[2]], [perm[3], perm[4], perm[5]], [perm[6], perm[7], perm[8]]])
     mat = mat.transpose()
     mat = standard_form(mat)
