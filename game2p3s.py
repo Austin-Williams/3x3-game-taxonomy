@@ -2,6 +2,7 @@ import numpy as np
 import itertools as it
 import logging
 import copy
+import lukmdo_lehmer.lehmer as lehmer
 
 logger = logging.getLogger('game2p3s')
 
@@ -26,6 +27,14 @@ def random_game(as_numpy_array=False):
         return numpy_array
 
     return GameArray(numpy_array)
+
+
+def lehmer_int_to_half_game(lehmer_int):
+    return HalfGameArray(lehmer.perm_from_int(range(1,10), lehmer_int))
+
+
+def lehmer_int_to_game(lehmer_int_list):
+    return GameArray([lehmer_int_to_half_game(lehmer_int) for lehmer_int in lehmer_int_list])
 
 
 class HalfGameArray(np.ndarray):
@@ -84,6 +93,14 @@ class HalfGameArray(np.ndarray):
 
         return game_array
 
+    @property
+    def lehmer_code(self):
+        return lehmer.code_from_perm(range(1,10), self.flatten().tolist())
+
+    @property
+    def lehmer_int(self):
+        return lehmer.int_from_perm(range(1,10), self.flatten().tolist())
+
 
 class GameArray(np.ndarray):
     """
@@ -108,6 +125,10 @@ class GameArray(np.ndarray):
         return self[player].view(HalfGameArray)
 
     @property
+    def players(self):
+        return tuple([self.player(0), self.player(1)])
+
+    @property
     def standard(self):
         game_array = self.copy()
 
@@ -128,6 +149,17 @@ class GameArray(np.ndarray):
                 game_array[:, 1:, 1:] = np.roll(game_array[:, 1:, 1:], -roll_by, axis=axis+1)
 
         return game_array.view(self.__class__)
+
+    @property
+    def lehmer_code(self):
+        return tuple([
+            lehmer.code_from_perm(range(1,10), player.flatten().tolist())
+            for player in [self.player(0), self.player(1)]
+        ])
+
+    @property
+    def lehmer_int(self):
+        return tuple([player.lehmer_int for player in self.players])
 
 
 class GameBaseException(Exception): pass
