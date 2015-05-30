@@ -37,10 +37,6 @@ class TestGame(unittest.TestCase):
     def test_lazy_strategy_standard(self):
         standard_is = self.lazy.standard.view(np.ndarray)
         should_be = np.array([[9, 7, 8], [3, 5, 4], [6, 2, 1]] * 2).reshape((2,3,3))
-        print 'IS', str(type(standard_is))
-        print standard_is
-        print 'SHOULD BE', str(type(should_be))
-        print should_be
         self.assertTrue((standard_is == should_be).all())
 
     def test_random_mirror_game_standard(self):
