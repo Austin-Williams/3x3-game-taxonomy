@@ -59,6 +59,9 @@ class HalfGameArray(np.ndarray):
         if obj is None: return
         self.meta = getattr(obj, 'meta', dict())
 
+    def __eq__(self, other):
+        return (self.standard.view(np.ndarray) == other.standard.view(np.ndarray)).all()
+
     @property
     def standard(self):
         game_array = self.copy()
@@ -81,9 +84,6 @@ class HalfGameArray(np.ndarray):
 
         return game_array
 
-    def __eq__(self, other):
-        return (self.standard.view(np.ndarray) == other.standard.view(np.ndarray)).all()
-
 
 class GameArray(np.ndarray):
     """
@@ -99,14 +99,13 @@ class GameArray(np.ndarray):
         if obj is None: return
         self.meta = getattr(obj, 'meta', dict())
 
+    def __eq__(self, other):
+        return (self.standard.view(np.ndarray) == other.standard.view(np.ndarray)).all()
+
     def player(self, player):
         if player not in range(2):
             raise GameIndexError("Only players 0 and 1 exist.  Player {} does not.".format(player))
         return self[player].view(HalfGameArray)
-
-    def __eq__(self, other):
-        return (self.standard.view(np.ndarray) == other.standard.view(np.ndarray)).all()
-
 
     @property
     def standard(self):
@@ -129,10 +128,6 @@ class GameArray(np.ndarray):
                 game_array[:, 1:, 1:] = np.roll(game_array[:, 1:, 1:], -roll_by, axis=axis+1)
 
         return game_array.view(self.__class__)
-
-
-    def __eq__(self, other):
-        return (self.standard.view(np.ndarray) == other.standard.view(np.ndarray)).all()
 
 
 class GameBaseException(Exception): pass
