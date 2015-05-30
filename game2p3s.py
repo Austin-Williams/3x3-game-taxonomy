@@ -7,7 +7,9 @@ logger = logging.getLogger('game2p3s')
 
 
 def random_half_game(as_numpy_array=False):
-    numpy_half_array = np.random.shuffle(np.arange(3**2) + 1).reshape((3, 3))
+    numpy_half_array = np.arange(3**2) + 1
+    np.random.shuffle(numpy_half_array)
+    numpy_half_array = numpy_half_array.reshape((3, 3))
 
     if as_numpy_array:
         return numpy_half_array
@@ -86,18 +88,6 @@ class HalfGameArray(np.ndarray):
 class GameArray(np.ndarray):
     """
     GameArray provides an interface to a 2-player, 3-strategy game.
-
-
-    >>> hga = HalfGameArray(range(1,10))
-    >>> print hga
-    [[1 2 3]
-     [4 5 6]
-     [7 8 9]]
-    >>> print hga.standard
-    [[9 7 8]
-     [3 5 4]
-     [6 2 1]]
-
     """
 
     def __new__(cls, data, meta=None):
@@ -131,14 +121,15 @@ class GameArray(np.ndarray):
                 game_array = np.roll(game_array, -roll_by, axis=axis+1)
 
         subarray_rolls = np.unravel_index(
-                    game_array[0,1:, 1:].argmax(),
-                    game_array[0,1:, 1:].shape
+                    game_array[0, 1:, 1:].argmax(),
+                    game_array[0, 1:, 1:].shape
                 )
         for axis, roll_by in enumerate(subarray_rolls):
             if roll_by:
-                game_array[:, 1:, 1:] = np.roll(game_array[:, 1:, 1:], -roll_by, axis=axis)
+                game_array[:, 1:, 1:] = np.roll(game_array[:, 1:, 1:], -roll_by, axis=axis+1)
 
         return game_array.view(self.__class__)
+
 
     def __eq__(self, other):
         return (self.standard.view(np.ndarray) == other.standard.view(np.ndarray)).all()
