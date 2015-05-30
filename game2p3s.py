@@ -3,91 +3,148 @@ import itertools as it
 import logging
 import copy
 
-logger = logging.getLogger('Game2p3s')
-
-# (players, strategies, strategies)
-GAME_SHAPE = (2, 3, 3)
+logger = logging.getLogger('game2p3s')
 
 
-def pole_position_max(game_array):
-    game_array = game_array.copy()
+def random_half_game(as_numpy_array=False):
+    numpy_half_array = np.random.shuffle(np.arange(3**2) + 1).reshape((3, 3))
 
-    for axis, roll_by in enumerate(np.unravel_index(game_array[0].argmax(), game_array.shape)[1:]):
-        if roll_by:
-            game_array = np.roll(game_array, -roll_by, axis=axis+1)
+    if as_numpy_array:
+        return numpy_half_array
 
-    return game_array
-
-
-def random_game(as_nxngame=True, auto_canonicalize=True):
-    players = [np.arange(3**2) + 1 for i in range(2)]
-    for i, player in enumerate(players):
-        np.random.shuffle(player)
-
-    game_array = np.array(players).reshape((2, 3, 3))
-
-    if as_nxngame:
-        return Game2p3s(game_array, auto_canonicalize=auto_canonicalize)
-    else:
-        return game_array
+    return HalfGameArray(numpy_half_array)
 
 
-class Game2p3s(object):
-    def __init__(self, game_array=None, auto_canonicalize=True):
-        if game_array is None:
-            raise GameException("Game array must be provided.  Use random_game() to get a " +
-                                "valid, random game.")
+def random_game(as_numpy_array=False):
+    numpy_array = np.array(
+        [random_half_game(as_numpy_array=True) for i in range(2)]
+    )
+
+    if as_numpy_array:
+        return numpy_array
+
+    return GameArray(numpy_array)
 
 
+class HalfGameArray(np.ndarray):
+    """
+    HalfGameArray provides an interface to a single player's strategy in a 2-player,
+    3-strategy game. It is a subclass of numpy.ndarray, so all numpy things should operate correctly
+    on it.
 
-        self._game_array = np.array(game_array)
+    Properties:
+        standard: the half game in standard form
 
-        if auto_canonicalize:
-            self.canonical_form(write_back=True)
+    A few illuminating doctests:
 
-    def __str__(self):
-        return "Game2p3s:\nP1:\n{}\nP2:\n{}".format(
-            self._game_array[0, :,:].__str__(),
-            self._game_array[1, :,:].__str__(),
-        )
+    >>> hga = HalfGameArray(range(1,10))
+    >>> print hga
+    [[1 2 3]
+     [4 5 6]
+     [7 8 9]]
+    >>> print hga.standard
+    [[9 7 8]
+     [3 5 4]
+     [6 2 1]]
+    """
 
-    def __repr__(self):
-        return "{}({})".format(
-            type(self).__name__,
-            self._game_array.tolist(),
-        )
+    def __new__(cls, input_array, meta=None):
+        obj = np.asarray(input_array).reshape(3,3).view(cls)
+        obj.meta = meta
+        return obj
 
-    @property
-    def shape(self):
-        return self._game_array.shape
-
-    def __getitem__(self, item):
-        return self.game_array.__getitem__(item)
+    def __array_finalize__(self, obj):
+        if obj is None: return
+        self.meta = getattr(obj, 'meta', dict())
 
     @property
-    def game_array(self):
-        return self._game_array
+    def standard(self):
+        game_array = self.copy()
 
-    @game_array.setter
-    def game_array(self, new_game_array):
-        self._game_array = np.array(new_game_array).reshape((2, 3, 3))
+        array_rolls = np.unravel_index(
+            game_array.argmax(),
+            game_array.shape
+        )
+        for axis, roll_by in enumerate(array_rolls):
+            if roll_by:
+                game_array = np.roll(game_array, -roll_by, axis=axis)
 
-    def canonical_form(self, write_back=False):
-        game_array = self._game_array.copy()
-
-        game_array = pole_position_max(game_array)
-        game_array[:, 1:, 1:] = pole_position_max(game_array[:, 1:, 1:])
-
-        if write_back:
-            self._game_array = game_array
+        subarray_rolls = np.unravel_index(
+                    game_array[1:, 1:].argmax(),
+                    game_array[1:, 1:].shape
+                )
+        for axis, roll_by in enumerate(subarray_rolls):
+            if roll_by:
+                game_array[1:, 1:] = np.roll(game_array[1:, 1:], -roll_by, axis=axis)
 
         return game_array
 
-    def player(self, which_player):
-        if which_player not in (0,1):
-            raise GameException("Invalid player indexed.")
-
-        return self._game_array[which_player]
+    def __eq__(self, other):
+        return (self.standard.view(np.ndarray) == other.standard.view(np.ndarray)).all()
 
 
-class GameException(Exception): pass
+class GameArray(np.ndarray):
+    """
+    GameArray provides an interface to a 2-player, 3-strategy game.
+
+
+    >>> hga = HalfGameArray(range(1,10))
+    >>> print hga
+    [[1 2 3]
+     [4 5 6]
+     [7 8 9]]
+    >>> print hga.standard
+    [[9 7 8]
+     [3 5 4]
+     [6 2 1]]
+
+    """
+
+    def __new__(cls, data, meta=None):
+        obj = np.asarray(data).reshape(2,3,3).view(cls)
+        obj.meta = meta
+        return obj
+
+    def __array_finalize__(self, obj):
+        if obj is None: return
+        self.meta = getattr(obj, 'meta', dict())
+
+    def player(self, player):
+        if player not in range(2):
+            raise GameIndexError("Only players 0 and 1 exist.  Player {} does not.".format(player))
+        return self[player].view(HalfGameArray)
+
+    def __eq__(self, other):
+        return (self.standard.view(np.ndarray) == other.standard.view(np.ndarray)).all()
+
+
+    @property
+    def standard(self):
+        game_array = self.copy()
+
+        array_rolls = np.unravel_index(
+            game_array[0, :, :].argmax(),
+            game_array.shape
+        )[1:]
+        for axis, roll_by in enumerate(array_rolls):
+            if roll_by:
+                game_array = np.roll(game_array, -roll_by, axis=axis+1)
+
+        subarray_rolls = np.unravel_index(
+                    game_array[0,1:, 1:].argmax(),
+                    game_array[0,1:, 1:].shape
+                )
+        for axis, roll_by in enumerate(subarray_rolls):
+            if roll_by:
+                game_array[:, 1:, 1:] = np.roll(game_array[:, 1:, 1:], -roll_by, axis=axis)
+
+        return game_array.view(self.__class__)
+
+    def __eq__(self, other):
+        return (self.standard.view(np.ndarray) == other.standard.view(np.ndarray)).all()
+
+
+class GameBaseException(Exception): pass
+
+
+class GameIndexError(GameBaseException): pass
