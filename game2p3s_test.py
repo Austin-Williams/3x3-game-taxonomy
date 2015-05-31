@@ -64,6 +64,27 @@ class TestGame(unittest.TestCase):
             self.assertEqual(game[0, 1, 1], np.amax(game[0, 1:, 1:]))
 
 
+    def test_player_lockstep_during_standardizations(self, how_many=100):
+        for i in range(how_many):
+            game = g.random_game()
+            std = game.standard
+
+            p0 = game.player(0)
+            p1 = game.player(1)
+            sp0 = std.player(0)
+            sp1 = std.player(1)
+
+            for i in range(1,10):
+                indices = np.where(p0.view(np.ndarray)==i)
+                sindices = np.where(sp0.view(np.ndarray)==i)
+
+                x, y = indices[0][0], indices[1][0]
+                sx, sy = sindices[0][0], sindices[1][0]
+
+                self.assertEqual(p1[x,y], sp1[sx,sy])
+
+
+
     def test_player_strategy_extraction(self, how_many=100):
         for i in range(how_many):
             game = g.random_game().standard
