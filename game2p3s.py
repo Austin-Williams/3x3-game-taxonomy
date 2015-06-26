@@ -2,7 +2,7 @@ import numpy as np
 import itertools as it
 import logging
 import copy
-import lukmdo_lehmer.lehmer as lehmer
+import lukmdo_lehmer as lehmer
 
 logger = logging.getLogger('game2p3s')
 
