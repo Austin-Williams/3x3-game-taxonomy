@@ -144,9 +144,13 @@ class GameArray(np.ndarray):
                     game_array[0, 1:, 1:].argmax(),
                     game_array[0, 1:, 1:].shape
                 )
-        for axis, roll_by in enumerate(subarray_rolls):
-            if roll_by:
-                game_array[:, 1:, 1:] = np.roll(game_array[:, 1:, 1:], -roll_by, axis=axis+1)
+
+        if subarray_rolls[0]:
+            game_array[:, 1:, :] = np.roll(game_array[:, 1:, :],
+                                           1, axis=1)
+        if subarray_rolls[1]:
+            game_array[:, :, 1:] = np.roll(game_array[:, :, 1:],
+                                           1, axis=2)
 
         return game_array.view(self.__class__)
 
