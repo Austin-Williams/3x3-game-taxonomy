@@ -56,7 +56,7 @@ class TestGame(unittest.TestCase):
 
     def test_lazy_strategy_standard(self):
         standard_is = self.lazy.standard.view(np.ndarray)
-        should_be = np.array([[9, 7, 8], [3, 5, 4], [6, 2, 1]] * 2).reshape((2,3,3))
+        should_be = np.array([[9, 8, 7], [6, 5, 4], [3, 2, 1]] * 2).reshape((2,3,3))
         self.assertTrue((standard_is == should_be).all())
 
     def test_random_mirror_game_standard(self):
@@ -112,8 +112,12 @@ class TestGame(unittest.TestCase):
 
     def test_row_and_column_sets_do_not_change(self, how_many=100):
         def get_row_column_sets(full_game):
-            rows = sorted([sorted(full_game[:, x].tolist()) for x in range(3)])
-            columns = sorted([sorted(full_game[:, :, x].tolist())
+            rows = sorted([sorted(
+                zip(full_game[0, x].tolist(), full_game[1, x].tolist())
+            ) for x in range(3)])
+            columns = sorted([sorted(
+                zip(full_game[0, :, x].tolist(), full_game[1, :, x])
+            )
                            for x in range(3)])
 
             return tuple(rows), tuple(columns)
