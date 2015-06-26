@@ -33,6 +33,22 @@ class TestHalfGame(unittest.TestCase):
             half = g.random_half_game().standard
             self.assertEqual(set(half.flatten().tolist()), set(range(1,10)))
 
+    def test_row_and_column_sets_do_not_change(self, how_many=100):
+        def get_row_column_sets(half_game):
+            rows = sorted([sorted(list(half[x])) for x in range(3)])
+            columns = sorted([sorted(list(half[:, x]))
+                           for x in range(3)])
+
+            return tuple(rows), tuple(columns)
+
+        for i in range(how_many):
+            half = g.random_half_game()
+
+            rc_before = get_row_column_sets(half)
+            rc_after = get_row_column_sets(half.standard)
+
+            self.assertEqual(rc_before, rc_after)
+
 
 class TestGame(unittest.TestCase):
     def setUp(self):
@@ -63,7 +79,6 @@ class TestGame(unittest.TestCase):
             self.assertEqual(game[0, 0, 0], 9)
             self.assertEqual(game[0, 1, 1], np.amax(game[0, 1:, 1:]))
 
-
     def test_player_lockstep_during_standardizations(self, how_many=100):
         for i in range(how_many):
             game = g.random_game()
@@ -83,8 +98,6 @@ class TestGame(unittest.TestCase):
 
                 self.assertEqual(p1[x,y], sp1[sx,sy])
 
-
-
     def test_player_strategy_extraction(self, how_many=100):
         for i in range(how_many):
             game = g.random_game().standard
@@ -97,7 +110,28 @@ class TestGame(unittest.TestCase):
             self.assertTrue((p0 == p0_direct).all())
             self.assertTrue((p1 == p1_direct).all())
 
+    def test_row_and_column_sets_do_not_change(self, how_many=100):
+        def get_row_column_sets(full_game):
+            rows = sorted([sorted(full_game[:, x].tolist()) for x in range(3)])
+            columns = sorted([sorted(full_game[:, :, x].tolist())
+                           for x in range(3)])
+
+            return tuple(rows), tuple(columns)
+
+        for i in range(how_many):
+            game = g.random_game()
+
+            rc_before = get_row_column_sets(game)
+            rc_after = get_row_column_sets(game.standard)
+
+            self.assertEqual(rc_before, rc_after)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    half_tests = unittest.TestLoader().loadTestsFromTestCase(TestHalfGame)
+    full_tests = unittest.TestLoader().loadTestsFromTestCase(TestGame)
+
+    test_runner = unittest.TextTestRunner(verbosity=3)
+
+    test_runner.run(half_tests)
+    test_runner.run(full_tests)
